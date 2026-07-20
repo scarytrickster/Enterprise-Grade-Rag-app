@@ -9,10 +9,30 @@ Contexts are truncated to 300 chars (2 chunks max) so no single request exceeds 
 
 import os
 import asyncio
+import sys
+import types
 import logfire
 import pandas as pd
 from openai import AsyncOpenAI
 
+
+def _install_ragas_vertexai_compat() -> None:
+    """
+    RAGAS 0.4.x imports ChatVertexAI from the old langchain_community path.
+    Newer LangChain versions moved it to langchain_google_vertexai.
+    """
+    module_name = "langchain_community.chat_models.vertexai"
+    if module_name in sys.modules:
+        return
+
+    from langchain_google_vertexai import ChatVertexAI
+
+    compat_module = types.ModuleType(module_name)
+    compat_module.ChatVertexAI = ChatVertexAI
+    sys.modules[module_name] = compat_module
+
+
+_install_ragas_vertexai_compat()
 
 from ragas.llms import llm_factory
 from ragas.embeddings import HuggingFaceEmbeddings
